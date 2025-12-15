@@ -101,6 +101,7 @@ export async function getSettings(): Promise<AppSettings> {
 export async function updateSettings(update: {
   model?: string | null
   pipelineWebhookUrl?: string | null
+  jobCompleteWebhookUrl?: string | null
 }): Promise<AppSettings> {
   return fetchApi<AppSettings>('/settings', {
     method: 'PATCH',

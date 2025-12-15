@@ -10,9 +10,37 @@ import * as settingsRepo from '../repositories/settings.js';
 import { runPipeline, processJob, getPipelineStatus, subscribeToProgress, getProgress } from '../pipeline/index.js';
 import { createNotionEntry } from '../services/notion.js';
 import { clearDatabase } from '../db/clear.js';
-import type { JobStatus, ApiResponse, JobsListResponse, PipelineStatusResponse } from '../../shared/types.js';
+import type { Job, JobStatus, ApiResponse, JobsListResponse, PipelineStatusResponse } from '../../shared/types.js';
 
 export const apiRouter = Router();
+
+async function notifyJobCompleteWebhook(job: Job) {
+  const overrideWebhookUrl = await settingsRepo.getSetting('jobCompleteWebhookUrl')
+  const webhookUrl = (overrideWebhookUrl || process.env.JOB_COMPLETE_WEBHOOK_URL || '').trim()
+  if (!webhookUrl) return
+
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    const secret = process.env.WEBHOOK_SECRET
+    if (secret) headers.Authorization = `Bearer ${secret}`
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        event: 'job.completed',
+        sentAt: new Date().toISOString(),
+        job,
+      }),
+    })
+
+    if (!response.ok) {
+      console.warn(`⚠️ Job complete webhook POST failed (${response.status}): ${await response.text()}`)
+    }
+  } catch (error) {
+    console.warn('⚠️ Job complete webhook POST failed:', error)
+  }
+}
 
 // ============================================================================
 // Jobs API
@@ -145,6 +173,10 @@ apiRouter.post('/jobs/:id/apply', async (req: Request, res: Response) => {
       appliedAt,
       notionPageId: notionResult.pageId,
     });
+
+    if (updatedJob) {
+      notifyJobCompleteWebhook(updatedJob).catch(console.warn)
+    }
     
     res.json({ success: true, data: updatedJob });
   } catch (error) {
@@ -188,6 +220,10 @@ apiRouter.get('/settings', async (_req: Request, res: Response) => {
     const defaultPipelineWebhookUrl = process.env.PIPELINE_WEBHOOK_URL || process.env.WEBHOOK_URL || '';
     const pipelineWebhookUrl = overridePipelineWebhookUrl || defaultPipelineWebhookUrl;
 
+    const overrideJobCompleteWebhookUrl = await settingsRepo.getSetting('jobCompleteWebhookUrl');
+    const defaultJobCompleteWebhookUrl = process.env.JOB_COMPLETE_WEBHOOK_URL || '';
+    const jobCompleteWebhookUrl = overrideJobCompleteWebhookUrl || defaultJobCompleteWebhookUrl;
+
     res.json({
       success: true,
       data: {
@@ -197,6 +233,9 @@ apiRouter.get('/settings', async (_req: Request, res: Response) => {
         pipelineWebhookUrl,
         defaultPipelineWebhookUrl,
         overridePipelineWebhookUrl,
+        jobCompleteWebhookUrl,
+        defaultJobCompleteWebhookUrl,
+        overrideJobCompleteWebhookUrl,
       },
     });
   } catch (error) {
@@ -208,6 +247,7 @@ apiRouter.get('/settings', async (_req: Request, res: Response) => {
 const updateSettingsSchema = z.object({
   model: z.string().trim().min(1).max(200).nullable().optional(),
   pipelineWebhookUrl: z.string().trim().min(1).max(2000).nullable().optional(),
+  jobCompleteWebhookUrl: z.string().trim().min(1).max(2000).nullable().optional(),
 });
 
 /**
@@ -227,6 +267,11 @@ apiRouter.patch('/settings', async (req: Request, res: Response) => {
       await settingsRepo.setSetting('pipelineWebhookUrl', pipelineWebhookUrl);
     }
 
+    if ('jobCompleteWebhookUrl' in input) {
+      const webhookUrl = input.jobCompleteWebhookUrl ?? null;
+      await settingsRepo.setSetting('jobCompleteWebhookUrl', webhookUrl);
+    }
+
     const overrideModel = await settingsRepo.getSetting('model');
     const defaultModel = process.env.MODEL || 'openai/gpt-4o-mini';
     const model = overrideModel || defaultModel;
@@ -234,6 +279,10 @@ apiRouter.patch('/settings', async (req: Request, res: Response) => {
     const overridePipelineWebhookUrl = await settingsRepo.getSetting('pipelineWebhookUrl');
     const defaultPipelineWebhookUrl = process.env.PIPELINE_WEBHOOK_URL || process.env.WEBHOOK_URL || '';
     const pipelineWebhookUrl = overridePipelineWebhookUrl || defaultPipelineWebhookUrl;
+
+    const overrideJobCompleteWebhookUrl = await settingsRepo.getSetting('jobCompleteWebhookUrl');
+    const defaultJobCompleteWebhookUrl = process.env.JOB_COMPLETE_WEBHOOK_URL || '';
+    const jobCompleteWebhookUrl = overrideJobCompleteWebhookUrl || defaultJobCompleteWebhookUrl;
 
     res.json({
       success: true,
@@ -244,6 +293,9 @@ apiRouter.patch('/settings', async (req: Request, res: Response) => {
         pipelineWebhookUrl,
         defaultPipelineWebhookUrl,
         overridePipelineWebhookUrl,
+        jobCompleteWebhookUrl,
+        defaultJobCompleteWebhookUrl,
+        overrideJobCompleteWebhookUrl,
       },
     });
   } catch (error) {

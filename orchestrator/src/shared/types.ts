@@ -179,4 +179,7 @@ export interface AppSettings {
   pipelineWebhookUrl: string;
   defaultPipelineWebhookUrl: string;
   overridePipelineWebhookUrl: string | null;
+  jobCompleteWebhookUrl: string;
+  defaultJobCompleteWebhookUrl: string;
+  overrideJobCompleteWebhookUrl: string | null;
 }
