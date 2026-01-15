@@ -20,10 +20,10 @@ import {
   MapPin,
   MoreHorizontal,
   Play,
-  RefreshCcw,
   Save,
   Search,
   Settings,
+  Shield,
   Sparkles,
   XCircle,
 } from "lucide-react";
@@ -638,8 +638,10 @@ export const OrchestratorPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={loadJobs} disabled={isLoading} aria-label="Refresh jobs">
-              <RefreshCcw className="h-4 w-4" />
+            <Button asChild variant="ghost" size="icon" aria-label="Visa Sponsors search">
+              <Link to="/visa-sponsors">
+                <Shield className="h-4 w-4" />
+              </Link>
             </Button>
             <Button asChild variant="ghost" size="icon" aria-label="UK Visa Jobs search">
               <Link to="/ukvisajobs">
