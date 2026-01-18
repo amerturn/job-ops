@@ -1236,8 +1236,8 @@ export const OrchestratorPage: React.FC = () => {
                 ))}
               </TabsList>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative w-full min-w-0 flex-1 sm:min-w-[180px] lg:max-w-[240px] lg:flex-none">
+              <div className="flex lg:flex-nowrap flex-wrap items-center justify-end gap-2">
+                <div className="relative w-full flex-1 min-w-[180px] lg:max-w-[240px] lg:flex-none">
                   <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
                   <Input
                     value={searchQuery}
@@ -1246,13 +1246,12 @@ export const OrchestratorPage: React.FC = () => {
                     className="h-8 pl-8 text-sm"
                   />
                 </div>
-
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-full gap-1.5 text-xs text-muted-foreground hover:text-foreground sm:w-auto"
+                      className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground w-auto"
                     >
                       <Filter className="h-3.5 w-3.5" />
                       {sourceFilter === "all" ? "All sources" : sourceLabel[sourceFilter]}
@@ -1280,7 +1279,7 @@ export const OrchestratorPage: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-full gap-1.5 text-xs text-muted-foreground hover:text-foreground sm:w-auto"
+                      className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground w-auto"
                     >
                       <ArrowUpDown className="h-3.5 w-3.5" />
                       {sortLabels[sort.key]}
