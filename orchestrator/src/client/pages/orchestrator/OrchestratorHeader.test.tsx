@@ -81,14 +81,15 @@ describe("OrchestratorHeader", () => {
   it("uses enabled sources for the all sources action", () => {
     const { props } = renderHeader({ enabledSources: ["gradcracker", "linkedin"] });
 
-    fireEvent.click(screen.getByRole("menuitem", { name: /All sources/i }));
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: /Select all sources/i }));
 
     expect(props.onSetPipelineSources).toHaveBeenCalledWith(["gradcracker", "linkedin"]);
   });
 
-  it("hides jobspy preset when no jobspy sources are enabled", () => {
-    renderHeader({ enabledSources: ["gradcracker"] });
+  it("does not show source presets", () => {
+    renderHeader({ enabledSources: ["gradcracker", "linkedin"] });
 
+    expect(screen.queryByRole("menuitem", { name: /Gradcracker only/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: /Indeed \+ LinkedIn only/i })).not.toBeInTheDocument();
   });
 });

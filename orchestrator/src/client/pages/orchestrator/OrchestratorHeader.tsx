@@ -18,7 +18,6 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -68,7 +67,8 @@ export const OrchestratorHeader: React.FC<OrchestratorHeaderProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const visibleSources = orderedSources.filter((source) => enabledSources.includes(source));
-  const enabledJobSpySources = visibleSources.filter((source) => source === "indeed" || source === "linkedin");
+  const allSourcesSelected =
+    visibleSources.length > 0 && visibleSources.every((source) => pipelineSources.includes(source));
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -148,7 +148,9 @@ export const OrchestratorHeader: React.FC<OrchestratorHeaderProps> = ({
               className="gap-2"
             >
               {isPipelineRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              <span className="hidden sm:inline">{isPipelineRunning ? "Running" : "Run pipeline"}</span>
+              <span className="hidden sm:inline">
+                {isPipelineRunning ? `Running (${pipelineSources.length})` : `Run pipeline (${pipelineSources.length})`}
+              </span>
             </Button>
 
             <DropdownMenu>
@@ -177,34 +179,15 @@ export const OrchestratorHeader: React.FC<OrchestratorHeaderProps> = ({
                   </DropdownMenuCheckboxItem>
                 ))}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={(event) => {
-                    event.preventDefault();
-                    onSetPipelineSources(visibleSources);
+                <DropdownMenuCheckboxItem
+                  checked={allSourcesSelected}
+                  onCheckedChange={(checked) => {
+                    onSetPipelineSources(checked ? visibleSources : visibleSources.slice(0, 1));
                   }}
+                  onSelect={(event) => event.preventDefault()}
                 >
-                  All sources
-                </DropdownMenuItem>
-                {visibleSources.includes("gradcracker") && (
-                  <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      onSetPipelineSources(["gradcracker"]);
-                    }}
-                  >
-                    Gradcracker only
-                  </DropdownMenuItem>
-                )}
-                {enabledJobSpySources.length > 0 && (
-                  <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      onSetPipelineSources(enabledJobSpySources);
-                    }}
-                  >
-                    Indeed + LinkedIn only
-                  </DropdownMenuItem>
-                )}
+                  Select all sources
+                </DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
