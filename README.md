@@ -7,7 +7,7 @@
 [![Contributors](https://img.shields.io/github/contributors-anon/dakheera47/job-ops)](Contributors)
 
 
-**Automate the hunt.** Scrapes major job boards (LinkedIn, Indeed, Glassdoor), **AI-scores suitability**, **tailors resumes** (RxResume), and **tracks application emails** automatically.
+Scrapes major job boards (LinkedIn, Indeed, Glassdoor & more), AI-scores suitability, tailors resumes (RxResume), and tracks application emails automatically. All while keeping the human in the loop.
 
 <img width="1200" height="600" alt="image" src="https://github.com/user-attachments/assets/7328102a-530d-4bd0-af0b-ce8a1b864f41" />
 
