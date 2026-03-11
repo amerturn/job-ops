@@ -5,11 +5,23 @@ vi.mock("@server/repositories/settings", () => ({
 }));
 
 import { getSetting } from "@server/repositories/settings";
-import { getWritingStyle } from "./writing-style";
+import {
+  getWritingStyle,
+  stripLanguageDirectivesFromConstraints,
+} from "./writing-style";
 
 describe("getWritingStyle", () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     vi.resetAllMocks();
+    process.env = { ...originalEnv };
+    delete process.env.CHAT_STYLE_TONE;
+    delete process.env.CHAT_STYLE_FORMALITY;
+    delete process.env.CHAT_STYLE_CONSTRAINTS;
+    delete process.env.CHAT_STYLE_DO_NOT_USE;
+    delete process.env.CHAT_STYLE_LANGUAGE_MODE;
+    delete process.env.CHAT_STYLE_MANUAL_LANGUAGE;
   });
 
   it("uses defaults when no overrides are stored", async () => {
@@ -20,6 +32,8 @@ describe("getWritingStyle", () => {
       formality: "medium",
       constraints: "",
       doNotUse: "",
+      languageMode: "manual",
+      manualLanguage: "english",
     });
   });
 
@@ -34,6 +48,10 @@ describe("getWritingStyle", () => {
           return "Keep it short";
         case "chatStyleDoNotUse":
           return "synergy";
+        case "chatStyleLanguageMode":
+          return "match-resume";
+        case "chatStyleManualLanguage":
+          return "german";
         default:
           return null;
       }
@@ -44,6 +62,16 @@ describe("getWritingStyle", () => {
       formality: "low",
       constraints: "Keep it short",
       doNotUse: "synergy",
+      languageMode: "match-resume",
+      manualLanguage: "german",
     });
+  });
+
+  it("strips language directives from constraints while keeping other guidance", () => {
+    expect(
+      stripLanguageDirectivesFromConstraints(
+        "Always respond in French. Keep it under 90 words. Output language: German.",
+      ),
+    ).toBe("Keep it under 90 words");
   });
 });

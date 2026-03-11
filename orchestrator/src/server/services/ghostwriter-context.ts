@@ -3,8 +3,16 @@ import { logger } from "@infra/logger";
 import { sanitizeUnknown } from "@infra/sanitize";
 import type { Job, ResumeProfile } from "@shared/types";
 import * as jobsRepo from "../repositories/jobs";
+import {
+  getWritingLanguageLabel,
+  resolveWritingOutputLanguage,
+} from "./output-language";
 import { getProfile } from "./profile";
-import { getWritingStyle, type WritingStyle } from "./writing-style";
+import {
+  getWritingStyle,
+  stripLanguageDirectivesFromConstraints,
+  type WritingStyle,
+} from "./writing-style";
 
 export type JobChatPromptContext = {
   job: Job;
@@ -96,7 +104,19 @@ function buildProfileSnapshot(profile: ResumeProfile): string {
   ]);
 }
 
-function buildSystemPrompt(style: WritingStyle): string {
+function buildSystemPrompt(
+  style: WritingStyle,
+  profile: ResumeProfile,
+): string {
+  const resolvedLanguage = resolveWritingOutputLanguage({
+    style,
+    profile,
+  });
+  const outputLanguage = getWritingLanguageLabel(resolvedLanguage.language);
+  const effectiveConstraints = stripLanguageDirectivesFromConstraints(
+    style.constraints,
+  );
+
   return compactJoin([
     "You are Ghostwriter, a job-application writing assistant for a single job.",
     "Use only the provided job and profile context unless the user gives extra details.",
@@ -104,11 +124,13 @@ function buildSystemPrompt(style: WritingStyle): string {
     "If details are missing, say what is missing before making assumptions.",
     "Avoid exposing private profile details that are unrelated to the user request.",
     "Follow the user's requested output language exactly when they specify one.",
-    "If the global writing constraints specify an output language, follow that when the user has not requested a different language.",
-    "If no output language is specified elsewhere, reply in the same language as the most recent user message.",
+    `When the user does not request a language, default to writing user-visible resume or application content in ${outputLanguage}.`,
+    `When suggesting a headline or job title, preserve the original wording instead of translating it.`,
     `Writing style tone: ${style.tone}.`,
     `Writing style formality: ${style.formality}.`,
-    style.constraints ? `Writing constraints: ${style.constraints}` : null,
+    effectiveConstraints
+      ? `Writing constraints: ${effectiveConstraints}`
+      : null,
     style.doNotUse ? `Avoid these terms: ${style.doNotUse}` : null,
   ]);
 }
@@ -133,9 +155,9 @@ export async function buildJobChatPromptContext(
     });
   }
 
-  const systemPrompt = buildSystemPrompt(style);
-  const jobSnapshot = buildJobSnapshot(job);
   const profileSnapshot = buildProfileSnapshot(profile);
+  const systemPrompt = buildSystemPrompt(style, profile);
+  const jobSnapshot = buildJobSnapshot(job);
 
   if (!jobSnapshot.trim()) {
     throw badRequest("Unable to build job context");

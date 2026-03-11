@@ -11,9 +11,14 @@ vi.mock("./profile", () => ({
   getProfile: vi.fn(),
 }));
 
-vi.mock("./writing-style", () => ({
-  getWritingStyle: vi.fn(),
-}));
+vi.mock("./writing-style", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./writing-style")>();
+
+  return {
+    ...actual,
+    getWritingStyle: vi.fn(),
+  };
+});
 
 import { getJobById } from "../repositories/jobs";
 import { getProfile } from "./profile";
@@ -27,6 +32,8 @@ describe("buildJobChatPromptContext", () => {
       formality: "medium",
       constraints: "",
       doNotUse: "",
+      languageMode: "manual",
+      manualLanguage: "english",
     });
   });
 
@@ -44,6 +51,8 @@ describe("buildJobChatPromptContext", () => {
       formality: "high",
       constraints: "Keep responses under 120 words",
       doNotUse: "synergy, leverage",
+      languageMode: "manual",
+      manualLanguage: "german",
     });
     vi.mocked(getProfile).mockResolvedValue({
       basics: {
@@ -77,6 +86,8 @@ describe("buildJobChatPromptContext", () => {
       formality: "high",
       constraints: "Keep responses under 120 words",
       doNotUse: "synergy, leverage",
+      languageMode: "manual",
+      manualLanguage: "german",
     });
     expect(context.systemPrompt).toContain("Writing style tone: direct.");
     expect(context.systemPrompt).toContain("Writing style formality: high.");
@@ -84,10 +95,10 @@ describe("buildJobChatPromptContext", () => {
       "Follow the user's requested output language exactly when they specify one.",
     );
     expect(context.systemPrompt).toContain(
-      "If the global writing constraints specify an output language, follow that when the user has not requested a different language.",
+      "When the user does not request a language, default to writing user-visible resume or application content in German.",
     );
     expect(context.systemPrompt).toContain(
-      "If no output language is specified elsewhere, reply in the same language as the most recent user message.",
+      "When suggesting a headline or job title, preserve the original wording instead of translating it.",
     );
     expect(context.systemPrompt).toContain(
       "Writing constraints: Keep responses under 120 words",
@@ -113,22 +124,60 @@ describe("buildJobChatPromptContext", () => {
     expect(context.systemPrompt).toContain("Writing style tone: professional.");
   });
 
-  it("preserves language instructions inside global writing constraints", async () => {
+  it("matches Ghostwriter language to detected resume language when configured", async () => {
     const job = createJob({ id: "job-ctx-3" });
     vi.mocked(getJobById).mockResolvedValue(job);
     vi.mocked(getWritingStyle).mockResolvedValue({
       tone: "professional",
       formality: "medium",
-      constraints: "Always respond in French.",
+      constraints: "",
       doNotUse: "",
+      languageMode: "match-resume",
+      manualLanguage: "english",
+    });
+    vi.mocked(getProfile).mockResolvedValue({
+      basics: {
+        name: "Claire",
+        summary:
+          "Je conçois des plateformes de données et je travaille avec des équipes produit et ingénierie.",
+      },
+      sections: {
+        summary: {
+          content:
+            "Expérience en développement, livraison et accompagnement des équipes.",
+        },
+      },
+    });
+
+    const context = await buildJobChatPromptContext(job.id);
+
+    expect(context.systemPrompt).toContain(
+      "When the user does not request a language, default to writing user-visible resume or application content in French.",
+    );
+  });
+
+  it("removes language instructions from global writing constraints", async () => {
+    const job = createJob({ id: "job-ctx-4" });
+    vi.mocked(getJobById).mockResolvedValue(job);
+    vi.mocked(getWritingStyle).mockResolvedValue({
+      tone: "professional",
+      formality: "medium",
+      constraints: "Always respond in French. Keep responses under 120 words.",
+      doNotUse: "",
+      languageMode: "manual",
+      manualLanguage: "english",
     });
     vi.mocked(getProfile).mockResolvedValue({});
 
     const context = await buildJobChatPromptContext(job.id);
 
     expect(context.systemPrompt).toContain(
-      "Writing constraints: Always respond in French.",
+      "When the user does not request a language, default to writing user-visible resume or application content in English.",
     );
+    expect(context.systemPrompt).toContain(
+      "Writing constraints: Keep responses under 120 words",
+    );
+    expect(context.systemPrompt).not.toContain("Always respond in French");
   });
 
   it("throws not found for unknown job", async () => {
