@@ -8,10 +8,10 @@
 export function formatSalary(
   min: number,
   max: number,
-  currency = 'USD',
+  currency = 'GBP',
   period: 'year' | 'month' | 'hour' = 'year'
 ): string {
-  const formatter = new Intl.NumberFormat('en-US', {
+  const formatter = new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
@@ -68,6 +68,8 @@ export function formatStatus(status: string): { label: string; color: string } {
     rejected: { label: 'Rejected', color: 'red' },
     withdrawn: { label: 'Withdrawn', color: 'gray' },
     saved: { label: 'Saved', color: 'purple' },
+    // added for tracking roles I'm waiting to hear back from
+    waiting: { label: 'Waiting', color: 'orange' },
   };
 
   return map[status.toLowerCase()] ?? { label: titleCase(status), color: 'gray' };
