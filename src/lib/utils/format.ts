@@ -72,6 +72,8 @@ export function formatStatus(status: string): { label: string; color: string } {
     waiting: { label: 'Waiting', color: 'orange' },
     // ghosted — no response after follow-up, keeping separate from rejected
     ghosted: { label: 'Ghosted', color: 'gray' },
+    // accepted — for when I've actually accepted an offer and it's confirmed
+    accepted: { label: 'Accepted', color: 'green' },
   };
 
   return map[status.toLowerCase()] ?? { label: titleCase(status), color: 'gray' };
