@@ -70,6 +70,8 @@ export function formatStatus(status: string): { label: string; color: string } {
     saved: { label: 'Saved', color: 'purple' },
     // added for tracking roles I'm waiting to hear back from
     waiting: { label: 'Waiting', color: 'orange' },
+    // ghosted — no response after follow-up, keeping separate from rejected
+    ghosted: { label: 'Ghosted', color: 'gray' },
   };
 
   return map[status.toLowerCase()] ?? { label: titleCase(status), color: 'gray' };
