@@ -80,7 +80,10 @@ export function formatStatus(status: string): { label: string; color: string } {
     assessment: { label: 'Assessment', color: 'orange' },
     // second_interview — tracking multiple interview rounds separately
     second_interview: { label: 'Second Interview', color: 'yellow' },
+    // final_interview — last round before a decision, good to distinguish from earlier rounds
+    final_interview: { label: 'Final Interview', color: 'yellow' },
   };
 
-  return map[status.toLowerCase()] ?? { label: titleCase(status), color: 'gray' };
+  // fall back gracefully for any unknown statuses rather than returning undefined
+  return map[status] ?? { label: titleCase(status.replace(/_/g, ' ')), color: 'gray' };
 }
