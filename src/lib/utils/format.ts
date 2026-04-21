@@ -78,6 +78,8 @@ export function formatStatus(status: string): { label: string; color: string } {
     phone_screen: { label: 'Phone Screen', color: 'yellow' },
     // assessment — take-home tasks or online tests
     assessment: { label: 'Assessment', color: 'orange' },
+    // second_interview — tracking multiple interview rounds separately
+    second_interview: { label: 'Second Interview', color: 'yellow' },
   };
 
   return map[status.toLowerCase()] ?? { label: titleCase(status), color: 'gray' };
