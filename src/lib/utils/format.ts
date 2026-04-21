@@ -74,6 +74,10 @@ export function formatStatus(status: string): { label: string; color: string } {
     ghosted: { label: 'Ghosted', color: 'gray' },
     // accepted — for when I've actually accepted an offer and it's confirmed
     accepted: { label: 'Accepted', color: 'green' },
+    // phone_screen — early stage before a full interview, useful to track separately
+    phone_screen: { label: 'Phone Screen', color: 'yellow' },
+    // assessment — take-home tasks or online tests
+    assessment: { label: 'Assessment', color: 'orange' },
   };
 
   return map[status.toLowerCase()] ?? { label: titleCase(status), color: 'gray' };
